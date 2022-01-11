@@ -17,25 +17,31 @@ export class CertificatesService {
 
   create(createCertificateDto: CreateCertificateDto) {
     const certificate = new this.certificateModel(createCertificateDto);
-    console.log(createCertificateDto);
     return certificate.save();
   }
 
-  findAll() {
-    return this.certificateModel.find();
+  async findOne(id: string) {
+    const certificate = await this.certificateModel.findById(id);
+    return {
+      certificate,
+    };
   }
 
-  findOne(id: string) {
-    return this.certificateModel.findById(id);
-  }
+  async update(id: string, updateCertificateDto: UpdateCertificateDto) {
+    const updateObject = {
+      userId: updateCertificateDto.userId,
+      name: updateCertificateDto.name,
+      grade: updateCertificateDto.grade,
+      courseName: updateCertificateDto.courseName,
+      courseId: updateCertificateDto.courseId,
+    };
 
-  update(id: string, updateCertificateDto: UpdateCertificateDto) {
     return this.certificateModel.findByIdAndUpdate(
       {
         _id: id,
       },
       {
-        updateCertificateDto,
+        $set: updateObject,
       },
       {
         new: true,

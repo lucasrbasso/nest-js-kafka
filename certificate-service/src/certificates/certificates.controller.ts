@@ -25,8 +25,10 @@ export class CertificatesController {
   }
 
   @MessagePattern('update-certificate')
-  update(@Payload() updateCertificateDto: { value: UpdateCertificateDto }) {
-    return this.certificatesService.update(
+  async update(
+    @Payload() updateCertificateDto: { value: UpdateCertificateDto },
+  ) {
+    await this.certificatesService.update(
       updateCertificateDto.value.id,
       updateCertificateDto.value,
     );

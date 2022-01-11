@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Client, ClientKafka, Transport } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { Producer } from '@nestjs/microservices/external/kafka.interface';
-import { resolve } from 'path/posix';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 
 @Injectable()
@@ -13,28 +12,13 @@ export class AppService {
     private clientKafka: ClientKafka,
   ) {}
 
-  @Client({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: ['localhost:9092'],
-      },
-      consumer: {
-        groupId: 'my-consumer-2', // Should be the same thing we give in consumer
-      },
-    },
-  })
-  client: ClientKafka;
-
   async onModuleInit() {
-    this.client.subscribeToResponseOf('find-certificate');
-    await this.client.connect();
+    this.clientKafka.subscribeToResponseOf('find-certificate');
+    await this.clientKafka.connect();
     this.kafkaProducer = await this.clientKafka.connect();
   }
 
   async createCertificate(createCertificateDto: CreateCertificateDto) {
-    console.log(createCertificateDto);
-
     await this.kafkaProducer.send({
       topic: 'create-certificate',
       messages: [
@@ -54,20 +38,50 @@ export class AppService {
     return 'A criação do seu certificado foi solicitada! Quando disponível, você receberá uma notificação!';
   }
 
-  consoleLogSubscribe(reply: any) {
-    console.log(reply);
-  }
-
   async getCertificate(id: string) {
     const response = new Promise((resolve) => {
-      this.client
-        .send('find-certificate', JSON.stringify(id))
-        .subscribe((reply) => {
-          console.log(reply);
-          resolve(reply);
-        });
+      this.clientKafka.send('find-certificate', { id }).subscribe((reply) => {
+        resolve(reply);
+      });
     });
 
     return response;
+  }
+
+  async updateCertificate(id: string, updateCertificate: CreateCertificateDto) {
+    await this.kafkaProducer.send({
+      topic: 'update-certificate',
+      messages: [
+        {
+          key: Math.random() + '',
+          value: JSON.stringify({
+            id,
+            userId: updateCertificate.userId,
+            name: updateCertificate.name,
+            grade: updateCertificate.grade,
+            courseName: updateCertificate.courseName,
+            courseId: updateCertificate.courseId,
+          }),
+        },
+      ],
+    });
+
+    return 'A alteração do seu certificado foi solicitada! Quando disponível, você receberá uma notificação!';
+  }
+
+  async deleteCertificate(id: string) {
+    await this.kafkaProducer.send({
+      topic: 'remove-certificate',
+      messages: [
+        {
+          key: Math.random() + '',
+          value: JSON.stringify({
+            id,
+          }),
+        },
+      ],
+    });
+
+    return 'A remoção do seu certificado foi solicitada!';
   }
 }

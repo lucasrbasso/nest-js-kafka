@@ -14,7 +14,7 @@ import { AppService } from './app.service';
             brokers: ['localhost:9092'],
           },
           consumer: {
-            groupId: 'my-consumer-3',
+            groupId: 'my-consumer-' + Math.random(),
           },
         },
       },

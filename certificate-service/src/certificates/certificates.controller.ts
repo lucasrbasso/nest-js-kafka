@@ -4,6 +4,12 @@ import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateDto } from './dto/update-certificate.dto';
 
+interface IdObjectProp {
+  value: {
+    id: string;
+  };
+}
+
 @Controller()
 export class CertificatesController {
   constructor(private readonly certificatesService: CertificatesService) {}
@@ -14,21 +20,20 @@ export class CertificatesController {
   }
 
   @MessagePattern('find-certificate')
-  findOne(@Payload() idObject: any) {
-    console.log(idObject.value.id);
+  findOne(@Payload() idObject: IdObjectProp) {
     return this.certificatesService.findOne(idObject.value.id);
   }
 
   @MessagePattern('update-certificate')
-  update(@Payload() updateCertificateDto: UpdateCertificateDto) {
+  update(@Payload() updateCertificateDto: { value: UpdateCertificateDto }) {
     return this.certificatesService.update(
-      updateCertificateDto.id,
-      updateCertificateDto,
+      updateCertificateDto.value.id,
+      updateCertificateDto.value,
     );
   }
 
   @MessagePattern('remove-certificate')
-  remove(@Payload() id: string) {
-    return this.certificatesService.remove(id);
+  remove(@Payload() idObject: IdObjectProp) {
+    return this.certificatesService.remove(idObject.value.id);
   }
 }

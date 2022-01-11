@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { Producer } from '@nestjs/microservices/external/kafka.interface';
+import { resolve } from 'path/posix';
+import { CreateCertificateDto } from './dto/create-certificate.dto';
 
 @Injectable()
 export class AppService {
@@ -30,30 +32,42 @@ export class AppService {
     this.kafkaProducer = await this.clientKafka.connect();
   }
 
-  async getHello() {
+  async createCertificate(createCertificateDto: CreateCertificateDto) {
+    console.log(createCertificateDto);
+
     await this.kafkaProducer.send({
       topic: 'create-certificate',
       messages: [
         {
           key: Math.random() + '',
           value: JSON.stringify({
-            userId: '121',
-            name: 'Lucas',
-            grade: '10',
-            courseName: 'Kafka',
-            courseId: '123',
+            userId: createCertificateDto.userId,
+            name: createCertificateDto.name,
+            grade: createCertificateDto.grade,
+            courseName: createCertificateDto.courseName,
+            courseId: createCertificateDto.courseId,
           }),
         },
       ],
     });
+
+    return 'A criação do seu certificado foi solicitada! Quando disponível, você receberá uma notificação!';
   }
 
-  async getCertificate() {
-    this.client
-      .send(
-        'find-certificate',
-        JSON.stringify({ id: '61dcd3e4d73810d641ca46af' }),
-      )
-      .subscribe((reply) => console.log(reply));
+  consoleLogSubscribe(reply: any) {
+    console.log(reply);
+  }
+
+  async getCertificate(id: string) {
+    const response = new Promise((resolve) => {
+      this.client
+        .send('find-certificate', JSON.stringify(id))
+        .subscribe((reply) => {
+          console.log(reply);
+          resolve(reply);
+        });
+    });
+
+    return response;
   }
 }

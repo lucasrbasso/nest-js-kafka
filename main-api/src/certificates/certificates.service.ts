@@ -4,7 +4,7 @@ import { Producer } from '@nestjs/microservices/external/kafka.interface';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 
 @Injectable()
-export class AppService {
+export class CertificatesService {
   private kafkaProducer: Producer;
 
   constructor(

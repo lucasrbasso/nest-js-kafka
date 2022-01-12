@@ -1,31 +1,30 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpStatus,
-  Param,
-  Post,
-  Put,
-  Res,
-} from '@nestjs/common';
-import { Response } from 'express';
-import { AppService } from './app.service';
+import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Res,
+  HttpStatus,
+} from '@nestjs/common';
 
-@Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+import { Response } from 'express';
 
-  // Certificates
+@Controller('certificates')
+export class CertificatesController {
+  constructor(private readonly certificatesService: CertificatesService) {}
 
-  @Post('/certificate')
+  @Post('/')
   async createCertificate(
     @Body() createCertificateDto: CreateCertificateDto,
     @Res() res: Response,
   ) {
     try {
-      const response = await this.appService.createCertificate(
+      const response = await this.certificatesService.createCertificate(
         createCertificateDto,
       );
       res.status(HttpStatus.OK).json({ message: response });
@@ -34,24 +33,24 @@ export class AppController {
     }
   }
 
-  @Get('/certificate/:id')
+  @Get('/:id')
   async getCertificate(@Param('id') id: string, @Res() res: Response) {
     try {
-      const certificate = await this.appService.getCertificate(id);
+      const certificate = await this.certificatesService.getCertificate(id);
       res.status(HttpStatus.OK).json(certificate);
     } catch (err) {
       res.status(HttpStatus.BAD_REQUEST).json({ error: err });
     }
   }
 
-  @Put('/certificate/:id')
+  @Put('/:id')
   async updateCertificate(
     @Param('id') id: string,
     @Body() updateCertificateDto: CreateCertificateDto,
     @Res() res: Response,
   ) {
     try {
-      const response = await this.appService.updateCertificate(
+      const response = await this.certificatesService.updateCertificate(
         id,
         updateCertificateDto,
       );
@@ -61,15 +60,13 @@ export class AppController {
     }
   }
 
-  @Delete('/certificate/:id')
+  @Delete('/:id')
   async deleteCertificate(@Param('id') id: string, @Res() res: Response) {
     try {
-      const response = await this.appService.deleteCertificate(id);
+      const response = await this.certificatesService.deleteCertificate(id);
       res.status(HttpStatus.OK).json({ message: response });
     } catch (err) {
       res.status(HttpStatus.BAD_REQUEST).json({ error: err });
     }
   }
-
-  // Users
 }

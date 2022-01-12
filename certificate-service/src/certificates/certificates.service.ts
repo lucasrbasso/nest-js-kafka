@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientKafka } from '@nestjs/microservices';
+import { Producer } from '@nestjs/microservices/external/kafka.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
@@ -10,14 +12,55 @@ import {
 
 @Injectable()
 export class CertificatesService {
+  private kafkaProducer: Producer;
+
   constructor(
+    @Inject('KAFKA_SERVICE')
+    private clientKafka: ClientKafka,
+
     @InjectModel(Certificate.name)
     private certificateModel: Model<CertificateDocument>,
   ) {}
 
-  create(createCertificateDto: CreateCertificateDto) {
-    const certificate = new this.certificateModel(createCertificateDto);
-    return certificate.save();
+  async onModuleInit() {
+    this.kafkaProducer = await this.clientKafka.connect();
+  }
+
+  async create(createCertificateDto: CreateCertificateDto) {
+    try {
+      const certificate = new this.certificateModel(createCertificateDto);
+      const response = certificate.save();
+
+      await this.kafkaProducer.send({
+        topic: 'create-notification',
+        messages: [
+          {
+            key: Math.random() + '',
+            value: JSON.stringify({
+              userId: createCertificateDto.userId,
+              message: 'Certificado gerado com sucesso!',
+              read: false,
+            }),
+          },
+        ],
+      });
+
+      return response;
+    } catch (err) {
+      await this.kafkaProducer.send({
+        topic: 'create-notification',
+        messages: [
+          {
+            key: Math.random() + '',
+            value: JSON.stringify({
+              userId: createCertificateDto.userId,
+              message: 'Ocorreu um erro ao gerar seu certificado!',
+              read: false,
+            }),
+          },
+        ],
+      });
+    }
   }
 
   async findOne(id: string) {
@@ -36,17 +79,49 @@ export class CertificatesService {
       courseId: updateCertificateDto.courseId,
     };
 
-    return this.certificateModel.findByIdAndUpdate(
-      {
-        _id: id,
-      },
-      {
-        $set: updateObject,
-      },
-      {
-        new: true,
-      },
-    );
+    try {
+      const response = await this.certificateModel.findByIdAndUpdate(
+        {
+          _id: id,
+        },
+        {
+          $set: updateObject,
+        },
+        {
+          new: true,
+        },
+      );
+
+      await this.kafkaProducer.send({
+        topic: 'create-notification',
+        messages: [
+          {
+            key: Math.random() + '',
+            value: JSON.stringify({
+              userId: updateCertificateDto.userId,
+              message: 'Certificado atualizado com sucesso!',
+              read: false,
+            }),
+          },
+        ],
+      });
+
+      return response;
+    } catch (error) {
+      await this.kafkaProducer.send({
+        topic: 'create-notification',
+        messages: [
+          {
+            key: Math.random() + '',
+            value: JSON.stringify({
+              userId: updateCertificateDto.userId,
+              message: 'Ocorreu um erro ao atualizar seu certificado!',
+              read: false,
+            }),
+          },
+        ],
+      });
+    }
   }
 
   remove(id: string) {

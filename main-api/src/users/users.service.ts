@@ -31,15 +31,23 @@ export class UsersService {
   }
 
   async updateQuantity(id: string, operation: string) {
-    const user = await this.userRepository.findOne(id);
+    console.log(id);
 
-    if (operation === 'SUM') {
-      Object.assign(user, { ...user, notifications: user.notifications + 1 });
-    } else {
-      Object.assign(user, { ...user, notifications: user.notifications - 1 });
+    try {
+      const user = await this.userRepository.findOne(id);
+
+      if (operation === 'SUM') {
+        Object.assign(user, { ...user, notifications: user.notifications + 1 });
+      } else {
+        Object.assign(user, { ...user, notifications: user.notifications - 1 });
+      }
+
+      return this.userRepository.save(user);
+    } catch (err) {
+      return {
+        error: 'Esse usuário não existe',
+      };
     }
-
-    return this.userRepository.save(user);
   }
 
   remove(id: string) {

@@ -13,7 +13,13 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Response } from 'express';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
+interface IdObjectProp {
+  value: {
+    id: string;
+  };
+}
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -42,5 +48,15 @@ export class UsersController {
   async remove(@Param('id') id: string, @Res() res: Response) {
     await this.usersService.remove(id);
     res.status(HttpStatus.OK).send();
+  }
+
+  @MessagePattern('create-notification-user')
+  increaseNotificationNumber(@Payload() idObject: IdObjectProp) {
+    return this.usersService.updateQuantity(idObject.value.id, 'SUM');
+  }
+
+  @MessagePattern('read-notification-user')
+  decreaseNotificationNumber(@Payload() idObject: IdObjectProp) {
+    return this.usersService.updateQuantity(idObject.value.id, 'MINUS');
   }
 }

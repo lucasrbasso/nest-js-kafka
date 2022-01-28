@@ -30,6 +30,18 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
+  async updateQuantity(id: string, operation: string) {
+    const user = await this.userRepository.findOne(id);
+
+    if (operation === 'SUM') {
+      Object.assign(user, { ...user, notifications: user.notifications + 1 });
+    } else {
+      Object.assign(user, { ...user, notifications: user.notifications - 1 });
+    }
+
+    return this.userRepository.save(user);
+  }
+
   remove(id: string) {
     return this.userRepository.delete(id);
   }
